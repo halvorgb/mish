@@ -21,7 +21,7 @@ data Config = Config { dimensions          :: Dimensions
 
 defaultConfig :: Config
 defaultConfig =
-    Config { dimensions          = (48,48)
+    Config { dimensions          = (64,64)
            , roomAttempts        = 1000
            , doubleConnectChance = 0.1
            , includeSquareRooms  = True
@@ -31,8 +31,8 @@ defaultConfig =
            , includeLRooms       = True
            , includeHRooms       = True
            , includeVoidRooms    = True
-           , minRoomRadius       = 3
-           , maxRoomRadius       = 5
+           , minRoomRadius       = 2
+           , maxRoomRadius       = 4
            , placeEnemies        = False
            , placeLights         = False
            }

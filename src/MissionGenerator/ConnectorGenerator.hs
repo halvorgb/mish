@@ -2,7 +2,7 @@ module MissionGenerator.ConnectorGenerator(connectRooms) where
 
 import           Control.Monad
 import           Control.Monad.ST
-import           Debug.Trace
+-- import           Debug.Trace
 -- import qualified Data.List               as L
 import qualified Data.Set                as S
 
@@ -28,13 +28,13 @@ connectRooms arr seed config =
          regions = createRegions floor_tiles
 
      -- yolo
-     --mapM_ (\p -> MA.writeArray arr p $ Cell Door Nothing Nothing) connectorIndices
-     --mapM_ (\p -> MA.writeArray arr p $ Cell Water Nothing Nothing) $ S.toList $ head regions
+     -- mapM_ (\p -> MA.writeArray arr p $ Cell Door Nothing Nothing) connectorIndices
+     -- mapM_ (\p -> MA.writeArray arr p $ Cell Water Nothing Nothing) $ S.toList $ head regions
+
+     -- return seed
      case regions of
        (h:t) -> connectRegions arr seed config h (S.fromList t) (S.fromList connectorIndices)
        _     -> return seed
-     --return seed
-
 -- all candidates for connectors, that is any wall tile which has 2 or more neighbouring floor tiles
 connectorCandidates :: MA.STArray s Position Cell -> [(Position, Cell)] -> (Position, Position) -> ST s [Position]
 connectorCandidates arr assocs b =
@@ -62,7 +62,7 @@ connectorCandidates arr assocs b =
                 check :: Maybe Cell -> Maybe Cell -> Bool
                 check Nothing _ = False
                 check _ Nothing = False
-                check (Just x) (Just y) = x == y &&
+                check (Just x) (Just y) = isFloor y &&
                                           isFloor x
 
         connectorCandidate _ _ = return False
@@ -93,28 +93,31 @@ createRegions s
 -- connect regions until only 1 remains
 connectRegions :: MA.STArray s Position Cell -> StdGen -> Config -> Region -> S.Set Region -> S.Set Position -> ST s StdGen
 connectRegions arr seed config region regions connectors
-  | trace ("len region: " ++ show (S.size region)) False = undefined
-  | trace ("connector: " ++ show connector) False = undefined
-  | trace ("len regions: " ++ show (S.size regions)) False = undefined
-  | trace ("len regions_connected: " ++ show (S.size regions_connected)) False = undefined
   | S.null regions ||
-    S.size regions == 1 = return seed
+    S.size regions == 1 ||
+    S.null region_connectors = return seed
   | S.null connectors   = error "Something has went terribly wrong, impossible to connect regions."
   | otherwise =
-    do MA.writeArray arr connector $ Cell Door Nothing Nothing
+    do when (not $ S.null regions_connected) $
+         MA.writeArray arr connector $ Cell Door Nothing Nothing
        connectRegions arr seed'' config region' regions' connectors'
 
-  where region_connectors  = S.toList $ S.filter (bordersRegion region) connectors
-        (connector, seed') = choice region_connectors seed
+  where region_connectors  =  S.filter (bordersRegion region) connectors
+        (connector, seed') = choice (S.toList region_connectors) seed
 
 
         regions_connected  = S.filter (\r -> bordersRegion r connector) regions
-        (chosen, seed'')   = choice (S.toList regions_connected) seed'
+        (chosen, seed'')   = if S.null regions_connected
+                             then (region, seed')
+                             else choice (S.toList regions_connected) seed'
+
         region'            = S.union region chosen
         regions'           = S.delete chosen regions
 
-        connectors'        = S.filter (\c -> not (bordersRegion region c &&
-                                                  bordersRegion chosen c)) connectors
+        connectors'        = if S.null regions_connected
+                             then S.delete connector connectors
+                             else S.filter (\c -> not (bordersRegion region c &&
+                                                       bordersRegion chosen c)) connectors
 
         -- (dc, seed''')      = randomR (0, 1) seed''
         -- doubleConnect      = dc <= doubleConnectChance config

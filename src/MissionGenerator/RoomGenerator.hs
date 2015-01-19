@@ -131,6 +131,7 @@ generateRandomRooms arr seed config attempts =
         (column, s) = randomR (0, columns-1) seed
         (row, s')   = randomR (0, rows-1) s
         (radius, s'') = randomR (minRoomRadius config, min distToEdge $ maxRoomRadius config) s'
+        room :: Room
         (room, s''') = random s''
         distToEdge  = minimum $ [ column           -- distance to left edge
                                 , row              -- distance to top edge
