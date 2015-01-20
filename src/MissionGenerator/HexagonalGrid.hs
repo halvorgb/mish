@@ -97,7 +97,12 @@ inRange (q,r) n = [(x+q, z+r) | x <- [(-n)..n]
 -- The interesection of two ranges
 inIntersectionRange :: AxialCoordinate -> Int -> AxialCoordinate -> Int -> [AxialCoordinate]
 inIntersectionRange (q1, r1) n1 (q2, r2) n2
-
+  | trace ("q2: " ++ show q2 ++ ", r2: " ++ show r2) False = undefined
+  | trace ("q1_min: " ++ show q1_min ++ ", q1_max: " ++ show q1_max) False = undefined
+  | trace ("q2_min: " ++ show q2_min ++ ", q2_max: " ++ show q2_max) False = undefined
+  | trace ("q_min: " ++ show q_min ++ ", q_max: " ++ show q_max) False = undefined
+  | trace ("r1_min 1: " ++ show (r1_min 1) ++ ", r1_max 1: " ++ show (r1_max 1)) False = undefined
+  | trace ("r2_min 1: " ++ show (r2_min 1) ++ ", r2_max 1: " ++ show (r2_max 1)) False = undefined
   | otherwise = [(q,r) | q <- [q_min..q_max]
                        , r <- [r_min q..r_max q]
                        ]
