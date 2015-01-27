@@ -1,23 +1,40 @@
-module MissionGenerator.HexagonalGrid(AxialCoordinate, (|+|), Dimensions, Tile, HexagonalMission, newMission, hexBounds, neighbours) where
+module MissionGenerator.HexagonalGrid( AxialCoordinate
+                                     , (|+|)
+                                     , Radius
+                                     , Tile
+                                     , HexagonalMission
+                                     , newMission
+                                     , inBounds
+                                     , withinRange
+                                     , neighbours
+                                     , prettyPrint) where
 
--- An implementation of http://www.redblobgames.com/grids/hexagons/
+-- An implementation algorithms from http://www.redblobgames.com/grids/hexagons/
+-- + general utility functions to handle hex grid missions
 -- Using axial coordinates
 
-import qualified Data.Array as A
-import Debug.Trace
+import qualified Data.List     as L
+import qualified Data.Map      as M
+import           System.Random
 
 -- (q,r)
 type AxialCoordinate = (Int, Int)
-
 -- (x,z,y)
 type CubeCoordinate  = (Int, Int, Int)
-type Dimensions = (AxialCoordinate, AxialCoordinate)
+type Radius          = Int
+type InternalMap     = M.Map AxialCoordinate Tile
 
 data Tile = Floor
           | Wall
           | Door
           | Water
-            deriving Eq
+          deriving (Bounded, Enum, Eq)
+
+instance Random Tile where
+    random g = case randomR (fromEnum (minBound :: Tile), fromEnum (maxBound :: Tile)) g of
+                 (r, g') -> (toEnum r, g')
+    randomR (a,b) g = case randomR (fromEnum a, fromEnum b) g of
+                        (r, g') -> (toEnum r, g')
 
 instance Show Tile where
   show Floor = " "
@@ -31,28 +48,35 @@ newtype HexagonalMission =
   HexagonalMission { internalMission :: InternalMission }
 
 data InternalMission =
-  InternalMission { internalArray :: A.Array AxialCoordinate Tile
-                  , internalDimensions :: Dimensions
+  InternalMission { internalMap    :: InternalMap
+                  , internalRadius :: Radius
                   }
 
 
 
 
-hexBounds :: HexagonalMission -> Dimensions
-hexBounds = internalDimensions . internalMission
 
-newMission :: A.Array AxialCoordinate Tile -> Dimensions -> HexagonalMission
-newMission arr ds = HexagonalMission $
-                    InternalMission { internalArray = arr
-                                    , internalDimensions = ds
-                                    }
+inBounds :: HexagonalMission -> AxialCoordinate -> Bool
+inBounds hm (x,y)
+  | x < ir &&
+    y < ir = undefined
+  | otherwise = undefined
+  where ir = internalRadius $ iMiss hm
 
+-- TODO: Control that radius is correct?
+--       Alternatively, calculate radius?
+newMission :: M.Map AxialCoordinate Tile -> Radius -> HexagonalMission
+newMission m r =
+  HexagonalMission $
+  InternalMission { internalMap = m
+                  , internalRadius = r
+                  }
 
 (|+|) :: AxialCoordinate -> AxialCoordinate -> AxialCoordinate
-(q,r) |+| (a,b) = (q+a, r+b)
+(q1,r1) |+| (q2, r2) = (q1+q2, r1+r2)
 
 (|++|) :: CubeCoordinate -> CubeCoordinate -> CubeCoordinate
-(x,z,y) |++| (a,b,c) = (x+a, z+b, y+c)
+(x1,y1,z1) |++| (x2, y2, z2) = (x1+x2, y1+y2, z1+z2)
 
 
 -- list all immediate neighbour coordinates.
@@ -90,46 +114,90 @@ line a b = []
 
 
 -- All coordinates within n distance of the point.
-inRange :: AxialCoordinate -> Int -> [AxialCoordinate]
-inRange (q,r) n = [(x+q, z+r) | x <- [(-n)..n]
-                              , z <- [max (-n) (-x-n)..min n (-x+n)]
-                              ]
--- The interesection of two ranges
+withinRange :: AxialCoordinate -> Int -> [AxialCoordinate]
+withinRange (q,r) n = [(x+q, y+r) | x <- [(-n)..n]
+                                  , y <- [max (-n) (-x-n)..min n (-x+n)]
+                                  ]
+-- The interesection of two ranges with separate lengths.
 inIntersectionRange :: AxialCoordinate -> Int -> AxialCoordinate -> Int -> [AxialCoordinate]
-inIntersectionRange (q1, r1) n1 (q2, r2) n2
-  | trace ("q2: " ++ show q2 ++ ", r2: " ++ show r2) False = undefined
-  | trace ("q1_min: " ++ show q1_min ++ ", q1_max: " ++ show q1_max) False = undefined
-  | trace ("q2_min: " ++ show q2_min ++ ", q2_max: " ++ show q2_max) False = undefined
-  | trace ("q_min: " ++ show q_min ++ ", q_max: " ++ show q_max) False = undefined
-  | trace ("r1_min 1: " ++ show (r1_min 1) ++ ", r1_max 1: " ++ show (r1_max 1)) False = undefined
-  | trace ("r2_min 1: " ++ show (r2_min 1) ++ ", r2_max 1: " ++ show (r2_max 1)) False = undefined
-  | otherwise = [(q,r) | q <- [q_min..q_max]
-                       , r <- [r_min q..r_max q]
-                       ]
-  where q1_min = q1 - n1
-        q2_min = q2 - n2
-        q_min  = max q1_min q2_min
+inIntersectionRange a1 n1 a2 n2 =
+  [(x, y) | x <- [x_min..x_max]
+          , y <- [max y_min (-x-z_max)..min y_max (-x-z_min)]
+          ]
+  where (x1, y1, z1) = axialToCube a1
+        (x2, y2, z2) = axialToCube a2
 
-        q1_max = q1 + n1
-        q2_max = q2 + n2
-        q_max = min q1_max q2_max
+        x_min = max (x1 - n1) (x2 - n2)
+        x_max = min (x1 + n1) (x2 + n2)
 
-        r1_min q = max (r1-n1) (r1-q-n1)
-        r2_min q = max (r2-n2) (r2-q-n2)
-        r_min  q = max (r1_min q) (r2_min q)
+        y_min = max (y1 - n1) (y2 - n2)
+        y_max = min (y1 + n1) (y2 + n2)
 
-        r1_max q = min (r1+n1) (r1-q+n1)
-        r2_max q = min (r2+n2) (r2-q+n2)
-        r_max  q = min (r1_max q) (r2_max q)
+        z_min = max (z1 - n1) (z2 - n2)
+        z_max = min (z1 + n1) (z2 + n2)
 
 
+
+
+foreachRow :: HexagonalMission -> ((Int, [(AxialCoordinate, Tile)]) -> IO ()) -> IO ()
+foreachRow hm f = mapM_ f row_list
+  where sorted_by_rows = M.toAscList $ iMap $ iMiss hm
+
+        row_list     = createRowList sorted_by_rows []
+
+        createRowList :: [(AxialCoordinate, Tile)] -> [(Int, [(AxialCoordinate, Tile)])] -> [(Int, [(AxialCoordinate, Tile)])]
+        createRowList [] m = reverse m
+        createRowList l  m = createRowList l' m'
+          where r        = ff $ head l
+                (cs, l') = span ((r==) . ff) l
+                cs'      = map (\((_, col), t) -> (col, t)) cs
+                m'       = (r,cs):m
+                ff       = fst . fst
+
+
+
+
+-- prints a hexagonalMission
+prettyPrint :: HexagonalMission -> IO ()
+prettyPrint hm = foreachRow hm f
+  where f :: (Int, [(AxialCoordinate, Tile)]) -> IO ()
+        f (row, l) =
+          putStrLn $ (createSpace row) ++ (L.intersperse ' ' $ concatMap (show . snd) l)
+
+        createSpace :: Int -> String
+        createSpace row = replicate (max 0 $ (abs row)) ' '
+
+        r = iRad $ iMiss hm
+
+
+
+-- Generate a test mission.
+testMission :: Radius -> HexagonalMission
+testMission r = newMission m r
+  where m :: InternalMap
+        m = M.fromList $ map pseudoRandomTile $ withinRange (0,0) r
+
+        pseudoRandomTile :: AxialCoordinate -> (AxialCoordinate, Tile)
+        pseudoRandomTile c@(x,y) = (c, fst $ random $ mkStdGen (abs x + abs y * 100))
+
+
+-- Util functions:
 axialToCube :: AxialCoordinate -> CubeCoordinate
-axialToCube (q,r) = (x,z,y)
+axialToCube (q,r) = (x,y,z)
   where x = q
-        z = r
-        y = -x-z
+        y = r
+        z = -x-y
 
 cubeToAxial :: CubeCoordinate -> AxialCoordinate
-cubeToAxial (x,z,_) = (q,r)
+cubeToAxial (x,y,_) = (q,r)
   where q = x
-        r = z
+        r = y
+
+iMiss :: HexagonalMission -> InternalMission
+iMiss = internalMission
+
+iMap :: InternalMission -> InternalMap
+iMap = internalMap
+
+iRad :: InternalMission -> Radius
+iRad = internalRadius
