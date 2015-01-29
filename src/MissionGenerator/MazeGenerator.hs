@@ -1,73 +1,47 @@
-module MissionGenerator.MazeGenerator(generateMaze) where
+module MissionGenerator.MazeGenerator(generateMazes) where
 
 
-import           Control.Monad
-import           Control.Monad.ST
-
-import qualified Data.Array.MArray       as MA
-import qualified Data.Array.ST           as MA
-import qualified Data.List               as L
--- import           Data.Maybe as Mb
+import qualified Data.List                      as L
+import qualified Data.Map                       as M
 import           MissionGenerator.Config
-import           MissionGenerator.Types
+import           MissionGenerator.HexagonalGrid
 import           MissionGenerator.Util
 import           System.Random
 
 
+-- Generate mazes wherever there's room in an InternalMap
+generateMazes :: InternalMap -> StdGen -> Config -> (InternalMap, StdGen)
+generateMazes m seed _ = L.foldl' subMaze (m, seed) $ M.keys m
 
-generateMaze :: MA.STArray s Position Cell -> StdGen -> Config -> ST s StdGen
-generateMaze arr seed _ =
-  do is <- indicesFromArr arr
-     foldM (subMaze arr) seed is
-
-
-indicesFromArr :: MA.STArray s Position Cell -> ST s [Position]
-indicesFromArr arr =
-  do ((minx, miny), (maxx, maxy)) <- MA.getBounds arr
-     return $ [(x,y) | x <- [minx..maxx], y <- [miny..maxy]]
-
-
--- try to create a sub maze starting at position p.
-subMaze :: MA.STArray s Position Cell -> StdGen -> Position -> ST s StdGen
-subMaze arr seed p =
-  do o <- isOpenToStart arr p
-     if o
-       then buildMaze arr seed p
-       else return seed
+-- try to create a sub maze starting at AxialCoordinate p.
+subMaze :: (InternalMap, StdGen) -> AxialCoordinate -> (InternalMap, StdGen)
+subMaze ms@(m, _) p
+  | isOpenToStart m p = buildMaze ms p
+  | otherwise = ms
 
 
 -- We have a (legal) starting position, build a maze from this position until we cannot build any more.
-buildMaze :: MA.STArray s Position Cell -> StdGen -> Position -> ST s StdGen
-buildMaze arr seed p =
-  do MA.writeArray arr p $ Cell Floor Nothing Nothing
-     moves <- legalMoves arr p
+buildMaze :: (InternalMap, StdGen) -> AxialCoordinate -> (InternalMap, StdGen)
+buildMaze (m, seed) p
+  | null moves = (m',  seed)
+  | otherwise  = buildMaze (m', seed') p'
 
-     if null moves
-       then return seed
-       else do let (chosenMove, seed') = choice moves seed
-               buildMaze arr seed' chosenMove
+  where m'          = M.insert p Floor m
+        moves       = legalMoves m p
+        (p', seed') = choice moves seed
 
--- Check if position p is OK to start (not open, all edges are not opened)
-isOpenToStart :: MA.STArray s Position Cell -> Position -> ST s Bool
-isOpenToStart arr p = allWall arr $ fiveWay p
+-- Check if position p is OK to start
+isOpenToStart :: InternalMap -> AxialCoordinate -> Bool
+isOpenToStart m p = allWall m $ p:neighbours p
 
--- Find all (0-4) legal moves for a maze to take from a position p
-legalMoves :: MA.STArray s Position Cell -> Position -> ST s [Position]
-legalMoves arr p =
-  do legals <- filterM (allWall arr) possibleMoves
-     let centers :: [Position]
-         centers = map head legals -- fiveWay always puts the center at head.
-     return centers
 
+allWall :: InternalMap -> [AxialCoordinate] -> Bool
+allWall m ps = all (\p -> maybe False (==Wall) $ M.lookup p m) ps
+
+-- Find all (0-6) legal moves for a maze to take from a position p
+legalMoves :: InternalMap -> AxialCoordinate -> [AxialCoordinate]
+legalMoves m p = filter legal ns
   where ns = neighbours p
-        possibleMoves :: [[Position]]
-        possibleMoves = map (L.delete p . fiveWay) ns
-
--- checks whether all tiles are wall.
-allWall :: MA.STArray s Position Cell -> [Position] -> ST s Bool
-allWall arr ps =
-  do b <- MA.getBounds arr
-     if (all (inBounds b) ps)
-       then do cells <- mapM (\p -> MA.readArray arr p) ps
-               return $ all isWall cells
-       else return False
+        legal :: AxialCoordinate -> Bool
+        legal n = allWall m nns
+          where nns = L.delete p $ n:neighbours n

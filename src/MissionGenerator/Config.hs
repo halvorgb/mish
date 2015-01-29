@@ -1,8 +1,8 @@
 module MissionGenerator.Config where
 
-import           MissionGenerator.Types
+import           MissionGenerator.HexagonalGrid
 
-data Config = Config { dimensions          :: Dimensions
+data Config = Config { radius              :: Radius
                      , roomAttempts        :: Int
                      , doubleConnectChance :: Float
                      , includeSquareRooms  :: Bool
@@ -21,7 +21,7 @@ data Config = Config { dimensions          :: Dimensions
 
 defaultConfig :: Config
 defaultConfig =
-    Config { dimensions          = (64,64)
+    Config { radius              = 8
            , roomAttempts        = 1000
            , doubleConnectChance = 0.1
            , includeSquareRooms  = True
@@ -49,9 +49,7 @@ invalidConfig c
   where roomAttemptsCheck = roomAttempts c > 20 &&
                             roomAttempts c < 5000
 
-        (rows, columns)       = dimensions c
-        largerThanMinimumSize = rows > 4 &&
-                                columns > 4
+        largerThanMinimumSize = radius c > 5
 
 
         includesSomeRoomType = includeSquareRooms c ||
@@ -61,11 +59,10 @@ invalidConfig c
                                includeLRooms c      ||
                                includeHRooms c
 
-        smallestDimension = min rows columns
-        roomRadiusCheck   = minRoomRadius c <= maxRoomRadius c         &&
-                            minRoomRadius c >= 2                       &&
-                            minRoomRadius c <= (smallestDimension - 2) &&
-                            maxRoomRadius c <= (smallestDimension - 2)
+        roomRadiusCheck   = minRoomRadius c <= maxRoomRadius c &&
+                            minRoomRadius c >= 1               &&
+                            minRoomRadius c <= (radius c - 2)    &&
+                            maxRoomRadius c <= (radius c - 2)
 
         doubleConnect      = doubleConnectChance c
         doubleConnectCheck = doubleConnect >= 0.0 &&

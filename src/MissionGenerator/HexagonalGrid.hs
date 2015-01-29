@@ -1,13 +1,19 @@
 module MissionGenerator.HexagonalGrid( AxialCoordinate
+                                     , CubeCoordinate
                                      , (|+|)
                                      , Radius
-                                     , Tile
+                                     , Tile(..)
                                      , HexagonalMission
+                                     , InternalMap
                                      , newMission
                                      , inBounds
                                      , withinRange
+                                     , ring
                                      , neighbours
-                                     , prettyPrint) where
+                                     , prettyPrint
+                                     , axialToCube
+                                     , cubeToAxial
+                                     ) where
 
 -- An implementation algorithms from http://www.redblobgames.com/grids/hexagons/
 -- + general utility functions to handle hex grid missions
@@ -128,6 +134,35 @@ withinRange :: AxialCoordinate -> Int -> [AxialCoordinate]
 withinRange (q,r) n = [(x+q, y+r) | x <- [(-n)..n]
                                   , y <- [max (-n) (-x-n)..min n (-x+n)]
                                   ]
+
+-- All coordinates at radius r around a point.
+ring :: AxialCoordinate -> Int -> [AxialCoordinate]
+ring ax r = map cubeToAxial $ rotate bottomLeft (cycle corners) directions
+  where (x,y,z) = axialToCube ax
+
+        rotate :: CubeCoordinate -> [CubeCoordinate] -> [CubeCoordinate] -> [CubeCoordinate]
+        rotate _ _         [] = []
+        rotate p cs@(c:cr) ds@(d:dr)
+          | n == c    = n:rotate n cr dr
+          | otherwise = n:rotate n cs ds
+          where n = p |++| d
+
+        bottomLeft =   (x-r, y  , z+r) -- bl
+        corners    = [ (x  , y-r, z+r) -- br
+                     , (x+r, y-r, z  ) -- r
+                     , (x+r, y  , z-r) -- tr
+                     , (x  , y+r, z-r) -- tl
+                     , (x-r, y+r, z  ) -- l
+                     , bottomLeft
+                     ]
+        directions = [ ( 1, -1,  0) -- bl -> b
+                     , ( 1,  0, -1) -- b  -> br
+                     , ( 0,  1, -1) -- br -> tr
+                     , (-1,  1,  0) -- tr -> t
+                     , (-1,  0,  1) -- t -> tl
+                     , ( 0, -1,  1) -- tl -> bl
+                     ]
+
 -- The interesection of two ranges with separate lengths.
 withinIntersectionRange :: AxialCoordinate -> Int -> AxialCoordinate -> Int -> [AxialCoordinate]
 withinIntersectionRange a1 n1 a2 n2 =

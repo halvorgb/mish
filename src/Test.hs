@@ -1,11 +1,11 @@
 module Main where
 
 import           MissionGenerator.Config
+import           MissionGenerator.HexagonalGrid
 import           MissionGenerator.MissionGenerator
--- import           MissionGenerator.Types
-import System.Random
+import           System.Random
 
 main :: IO ()
 main =
   do seed <- newStdGen
-     putStrLn $ prettyMission $ generateMission defaultConfig seed
+     prettyPrint $ generateMission defaultConfig seed
