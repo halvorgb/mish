@@ -1,6 +1,5 @@
 module Mish.MazeGenerator(generateMazes) where
 
-
 import qualified Data.List                      as L
 import qualified Data.Map                       as M
 import           Mish.Config
@@ -18,7 +17,6 @@ subMaze :: (InternalMap, StdGen) -> AxialCoordinate -> (InternalMap, StdGen)
 subMaze ms@(m, _) p
   | isOpenToStart m p = buildMaze ms p
   | otherwise = ms
-
 
 -- We have a (legal) starting position, build a maze from this position until we cannot build any more.
 buildMaze :: (InternalMap, StdGen) -> AxialCoordinate -> (InternalMap, StdGen)

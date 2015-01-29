@@ -1,7 +1,5 @@
 module Mish.RoomGenerator(generateRandomRooms) where
 
-
-
 import qualified Data.List                      as L
 import qualified Data.Map                       as M
 import           Mish.Config
@@ -16,9 +14,6 @@ instance Random Room where
                  (r, g') -> (toEnum r, g')
     randomR (a,b) g = case randomR (fromEnum a, fromEnum b) g of
                         (r, g') -> (toEnum r, g')
-
-data VoidRoom = VoidRoom Room
-                deriving (Show, Eq)
 
 -- attempt to generate a room of a specific type at a center
 -- generate the largest area possible.
@@ -58,6 +53,7 @@ generateRandomRooms m seed config attempts = generateRandomRooms m' s''' config 
         minRR = minRoomRadius config
         maxRR = min minDistToEdge $ maxRoomRadius config
         (rr, s'') = randomR (minRR, maxRR) s'
+
         -- randomize room-type.
         room :: Room
         (room, s''') = random s''
@@ -68,9 +64,6 @@ generateRandomRooms m seed config attempts = generateRandomRooms m' s''' config 
 
 
         minDistToEdge = minimum $ distToEdge cube r
-        -- randomize shape.
-        -- find the max bounds the shape can take
-        -- randomize bounds
 
         -- Find a way to not pass s''''' in the above...
 

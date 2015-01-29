@@ -1,7 +1,5 @@
 module Mish.ConnectorGenerator(connectRooms) where
 
-
-
 import qualified Data.Set                as S
 import qualified Data.Map           as M
 import           Mish.Config
@@ -84,10 +82,6 @@ connectRegions m seed config region regions connectors
         m' = if not $ S.null regions_connected
              then M.insert connector Door m
              else m
-
-
-        -- (dc, seed''')      = randomR (0, 1) seed''
-        -- doubleConnect      = dc <= doubleConnectChance config
 
         bordersRegion :: Region -> AxialCoordinate -> Bool
         bordersRegion r c = any (`S.member` r) $ neighbours c

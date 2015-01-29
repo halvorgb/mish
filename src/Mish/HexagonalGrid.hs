@@ -60,7 +60,6 @@ data InternalMission =
                   , internalRadius :: Radius
                   }
 
-
 -- The only way to create a HexagonalMission outside this module is through this function.
 -- controls that the radius is correct (and that the indices form a perfect hexagon)
 newMission :: M.Map AxialCoordinate Tile -> Radius -> HexagonalMission
@@ -83,7 +82,6 @@ getInternalMap = iMap . iMiss
 
 (|++|) :: CubeCoordinate -> CubeCoordinate -> CubeCoordinate
 (x1,y1,z1) |++| (x2, y2, z2) = (x1+x2, y1+y2, z1+z2)
-
 
 -- Control that the given coordinates are within the bounds of the mission.
 inBounds :: HexagonalMission -> AxialCoordinate -> Bool
