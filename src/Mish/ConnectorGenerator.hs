@@ -1,12 +1,12 @@
-module MissionGenerator.ConnectorGenerator(connectRooms) where
+module Mish.ConnectorGenerator(connectRooms) where
 
 
 
 import qualified Data.Set                as S
 import qualified Data.Map           as M
-import           MissionGenerator.Config
-import           MissionGenerator.Util
-import           MissionGenerator.HexagonalGrid
+import           Mish.Config
+import           Mish.Util
+import           Mish.HexagonalGrid
 import           System.Random
 type Region = S.Set AxialCoordinate
 

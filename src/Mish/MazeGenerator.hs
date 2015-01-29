@@ -1,11 +1,11 @@
-module MissionGenerator.MazeGenerator(generateMazes) where
+module Mish.MazeGenerator(generateMazes) where
 
 
 import qualified Data.List                      as L
 import qualified Data.Map                       as M
-import           MissionGenerator.Config
-import           MissionGenerator.HexagonalGrid
-import           MissionGenerator.Util
+import           Mish.Config
+import           Mish.HexagonalGrid
+import           Mish.Util
 import           System.Random
 
 

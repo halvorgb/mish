@@ -1,4 +1,4 @@
-module MissionGenerator.HexagonalGrid( AxialCoordinate
+module Mish.HexagonalGrid( AxialCoordinate
                                      , CubeCoordinate
                                      , (|+|)
                                      , Radius

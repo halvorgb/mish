@@ -1,6 +1,6 @@
-module MissionGenerator.Config where
+module Mish.Config where
 
-import           MissionGenerator.HexagonalGrid
+import           Mish.HexagonalGrid
 
 data Config = Config { radius              :: Radius
                      , roomAttempts        :: Int

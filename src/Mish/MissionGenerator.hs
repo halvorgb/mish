@@ -1,14 +1,14 @@
-module MissionGenerator.MissionGenerator(generateMission) where
+module Mish.MissionGenerator(generateMission) where
 
 import qualified Data.Map as M
-import           MissionGenerator.Config
-import           MissionGenerator.ConnectorGenerator
-import           MissionGenerator.HexagonalGrid
-import           MissionGenerator.MazeGenerator
-import           MissionGenerator.RoomGenerator
+import           Mish.Config
+import           Mish.ConnectorGenerator
+import           Mish.HexagonalGrid
+import           Mish.MazeGenerator
+import           Mish.RoomGenerator
 import           System.Random
 
--- Generates a based on a seed and a config
+-- Generates a mission based on a seed and a config
 generateMission ::Config -> StdGen -> HexagonalMission
 generateMission config seed =
   case invalidConfig config of

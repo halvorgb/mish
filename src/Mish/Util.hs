@@ -1,4 +1,4 @@
-module MissionGenerator.Util where
+module Mish.Util where
 
 import System.Random
 

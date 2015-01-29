@@ -1,11 +1,11 @@
-module MissionGenerator.RoomGenerator(generateRandomRooms) where
+module Mish.RoomGenerator(generateRandomRooms) where
 
 
 
 import qualified Data.List                      as L
 import qualified Data.Map                       as M
-import           MissionGenerator.Config
-import           MissionGenerator.HexagonalGrid
+import           Mish.Config
+import           Mish.HexagonalGrid
 import           System.Random
 
 data Room = HexRoom

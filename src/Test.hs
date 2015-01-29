@@ -1,8 +1,8 @@
 module Main where
 
-import           MissionGenerator.Config
-import           MissionGenerator.HexagonalGrid
-import           MissionGenerator.MissionGenerator
+import           Mish.Config
+import           Mish.HexagonalGrid
+import           Mish.MissionGenerator
 import           System.Random
 
 main :: IO ()
