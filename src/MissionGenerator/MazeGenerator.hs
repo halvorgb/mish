@@ -36,7 +36,7 @@ isOpenToStart m p = allWall m $ p:neighbours p
 
 
 allWall :: InternalMap -> [AxialCoordinate] -> Bool
-allWall m ps = all (\p -> maybe False (==Wall) $ M.lookup p m) ps
+allWall m = all (\p -> maybe False (==Wall) $ M.lookup p m)
 
 -- Find all (0-6) legal moves for a maze to take from a position p
 legalMoves :: InternalMap -> AxialCoordinate -> [AxialCoordinate]

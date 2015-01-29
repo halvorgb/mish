@@ -67,7 +67,7 @@ newMission :: M.Map AxialCoordinate Tile -> Radius -> HexagonalMission
 newMission m r
   | keySet /= keySetCorrect = error "The map isn't a perfect hexagon."
   | otherwise =
-    HexagonalMission $
+    HexagonalMission
     InternalMission { internalMap = m
                     , internalRadius = r
                     }
@@ -88,10 +88,10 @@ getInternalMap = iMap . iMiss
 -- Control that the given coordinates are within the bounds of the mission.
 inBounds :: HexagonalMission -> AxialCoordinate -> Bool
 inBounds hm (x,y) =
-  x >= (-r) &&
-  x <= (r) &&
-  y >= (max (-r) (-x-r)) &&
-  y <= (min r (-x+r))
+  x >= -r &&
+  x <= r &&
+  y >= max (-r) (-x-r) &&
+  y <= min r (-x+r)
   where r = iRad $ iMiss hm
 
 -- list all immediate neighbour coordinates.
@@ -187,10 +187,10 @@ prettyPrint :: HexagonalMission -> IO ()
 prettyPrint hm = foreachRow hm f
   where f :: (Int, [(AxialCoordinate, Tile)]) -> IO ()
         f (row, l) =
-          putStrLn $ (createSpace row) ++ (L.intersperse ' ' $ concatMap (show . snd) l)
+          putStrLn $ createSpace row ++ L.intersperse ' ' (concatMap (show . snd) l)
 
         createSpace :: Int -> String
-        createSpace row = replicate (max 0 $ (abs row)) ' '
+        createSpace row = replicate (max 0 $ abs row) ' '
 
 -- Helper function for prettyPrint
 foreachRow :: HexagonalMission -> ((Int, [(AxialCoordinate, Tile)]) -> IO ()) -> IO ()

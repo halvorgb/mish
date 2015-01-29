@@ -29,7 +29,7 @@ connectorCandidates m ascs = map fst candidates
         connectorCandidate :: (AxialCoordinate, Tile) -> Bool
         connectorCandidate (p, t) =
           (t == Wall) &&
-          (2 <= (length $ filter (\n -> maybe False (==Floor) $ M.lookup n m) $ neighbours p))
+          (2 <= length (filter (\n -> maybe False (==Floor) $ M.lookup n m) $ neighbours p))
 
 -- take an element from the set, add all of its neighbours into a Region.
 createRegions :: S.Set AxialCoordinate -> [Region]
@@ -67,7 +67,7 @@ connectRegions m seed config region regions connectors
         (connector, seed') = choice (S.toList region_connectors) seed
 
 
-        regions_connected  = S.filter (\r -> bordersRegion r connector) regions
+        regions_connected  = S.filter (`bordersRegion` connector) regions
         (chosen, seed'')   = if S.null regions_connected
                              then (region, seed')
                              else choice (S.toList regions_connected) seed'
@@ -90,4 +90,4 @@ connectRegions m seed config region regions connectors
         -- doubleConnect      = dc <= doubleConnectChance config
 
         bordersRegion :: Region -> AxialCoordinate -> Bool
-        bordersRegion r c = any (\n -> S.member n r) $ neighbours c
+        bordersRegion r c = any (`S.member` r) $ neighbours c

@@ -30,8 +30,8 @@ generateRoom m room c r = m'
 
         cells = map (m M.!) allPoses
 
-        m' = if (not $ null allPoses) &&
-                (all (==Wall) cells)
+        m' = if not (null allPoses) &&
+                all (==Wall) cells
              then L.foldl' (\tm op -> M.insert op Floor tm) m openPositions
              else m
 
