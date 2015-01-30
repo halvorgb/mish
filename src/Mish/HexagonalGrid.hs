@@ -33,8 +33,6 @@ type InternalMap     = M.Map AxialCoordinate Tile
 
 data Tile = Floor
           | Wall
-          | Door
-          | Water
           deriving (Bounded, Enum, Eq)
 
 instance Random Tile where
@@ -46,10 +44,6 @@ instance Random Tile where
 instance Show Tile where
   show Floor = " "
   show Wall  = "#"
-  show Door  = "D"
-  show Water = "~"
-
-
 
 -- assumptions: (0,0) = centre
 newtype HexagonalMission =

@@ -13,7 +13,7 @@ connectRooms :: InternalMap -> StdGen -> Config -> (InternalMap, StdGen)
 connectRooms m seed config =
   case regions of
     []    -> (m, seed)
-    (h:t) -> connectRegions m seed config h (S.fromList t) $ S.fromList connectorIndices
+    (h:t) -> connectRegions m seed config h (S.fromList t) (S.fromList connectorIndices) False
   where ascs = M.assocs m
         connectorIndices = connectorCandidates m ascs
         floorTiles = S.fromList $ map fst $ filter ((Floor==) . snd) ascs
@@ -27,7 +27,24 @@ connectorCandidates m ascs = map fst candidates
         connectorCandidate :: (AxialCoordinate, Tile) -> Bool
         connectorCandidate (p, t) =
           (t == Wall) &&
-          (2 <= length (filter (\n -> maybe False (==Floor) $ M.lookup n m) $ neighbours p))
+          any (\(n1, n2) -> S.member n1 floorNeighbours &&
+                             S.member n2 floorNeighbours
+              ) (neighbourpairs p)
+          where floorNeighbours = S.fromList $ filter (\n -> maybe False (==Floor) $ M.lookup n m) $ neighbours p
+
+        -- the acceptable pairs of neighbours for a connectorCandidate
+        neighbourpairs :: AxialCoordinate -> [(AxialCoordinate, AxialCoordinate)]
+        neighbourpairs c = map (\(n1, n2) -> (n1 |+| c, n2 |+| c)) matrix
+          where matrix = [ ((-1, 0), (0,  1)) -- TL, B
+                         , ((-1, 0), (1,  0)) -- TL, BR
+                         , ((-1, 0), (1, -1)) -- TL, TR
+                         , ((-1, 1), (1,  0)) -- BL, BR
+                         , ((-1, 1), (1, -1)) -- BL, TR
+                         , ((-1, 1), (0, -1)) -- BL, T
+                         , (( 0, 1), (1, -1)) -- B , TR
+                         , (( 0, 1), (0, -1)) -- B , T
+                         , (( 1, 0), (0, -1)) -- BR, T
+                         ]
 
 -- take an element from the set, add all of its neighbours into a Region.
 createRegions :: S.Set AxialCoordinate -> [Region]
@@ -53,25 +70,33 @@ createRegions s
 
 
 -- connect regions until only 1 remains
-connectRegions :: InternalMap -> StdGen -> Config -> Region -> S.Set Region -> S.Set AxialCoordinate -> (InternalMap, StdGen)
-connectRegions m seed config region regions connectors
+connectRegions :: InternalMap -> StdGen -> Config -> Region -> S.Set Region -> S.Set AxialCoordinate -> Bool -> (InternalMap, StdGen)
+connectRegions m seed config region regions connectors doubled
   | S.null regions ||
     S.size regions == 1 ||
     S.null region_connectors = (m, seed)
   | S.null connectors        = error "Something has went terribly wrong, impossible to connect regions."
-  | otherwise                = connectRegions m' seed'' config region' regions' connectors'
+  | otherwise                = connectRegions m' seed''' config region' regions' connectors' doubleConnect
 
   where region_connectors  = S.filter (bordersRegion region) connectors
         (connector, seed') = choice (S.toList region_connectors) seed
 
+        dcChance           = doubleConnectorChance config
+        (dc, seed'')       = randomR (0.0, 1.0) seed'
+        doubleConnect      = not doubled &&
+                             S.size region_connectors > 1 &&
+                             dc < dcChance
 
         regions_connected  = S.filter (`bordersRegion` connector) regions
-        (chosen, seed'')   = if S.null regions_connected
-                             then (region, seed')
-                             else choice (S.toList regions_connected) seed'
+        (chosen, seed''')  = if S.null regions_connected
+                             then (region, seed'')
+                             else choice (S.toList regions_connected) seed''
 
         region'            = S.union region chosen
-        regions'           = S.delete chosen regions
+
+        regions'           = if doubleConnect
+                             then regions
+                             else S.delete chosen regions
 
         connectors'        = if S.null regions_connected
                              then S.delete connector connectors
@@ -79,8 +104,9 @@ connectRegions m seed config region regions connectors
                                                        bordersRegion chosen c)) connectors
 
 
+
         m' = if not $ S.null regions_connected
-             then M.insert connector Door m
+             then M.insert connector Floor m
              else m
 
         bordersRegion :: Region -> AxialCoordinate -> Bool
