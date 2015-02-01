@@ -37,3 +37,8 @@ executable mish-generator
                    , mish
   ghc-options:       -Wall -O2 -fwarn-unused-imports -threaded
   default-language:  Haskell2010
+
+
+source-repository head
+  type: git
+  location: https://github.com/halvorgb/mish.git
